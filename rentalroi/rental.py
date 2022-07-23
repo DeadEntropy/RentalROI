@@ -48,34 +48,55 @@ class Rental:
 
             schedule.append(cashflow)
         return schedule
-    
-    @property
-    def summarize(self):
-        print('Property Purchase Price:  {}{:>11,.0f}'.format(self._loan._currency, self._price))
-        print('Additional Setup Cost:    {}{:>11,.0f}'.format(self._loan._currency, self._additional_investment))
-        print('')
+
+    def summarize(self, output_type=None):
+
         original_investment =  self._price + self._additional_investment - float(self._loan.principal)
-        print('Initial Investment:       {}{:>11,.0f}'.format(self._loan._currency, original_investment))
-        print('Loan Principal:           {}{:>11,.0f}'.format(self._loan._currency, self._loan.principal))
-        print('')
-        print('Monthly Rent:             {}{:>11,.0f}'.format(self._loan._currency, self._rent))
         tax_deductibles = float(self._loan.schedule(1).interest) + self._insurance + self._management_fee + self._hoa + self._tax
         not_tax_deductibles = float(self._loan.schedule(1).principal)
-        print('Monthly Costs:            {}{:>11,.0f}'.format(self._loan._currency, tax_deductibles + not_tax_deductibles))        
-        print(' - Loan Payment:          {}{:>11,.0f}'.format(self._loan._currency, self._loan.monthly_payment))        
-        print('   * Principal:           {}{:>11,.0f}'.format(self._loan._currency, self._loan.schedule(1).principal))        
-        print('   * Interest:            {}{:>11,.0f}'.format(self._loan._currency, self._loan.schedule(1).interest))
-        print(' - HOA:                   {}{:>11,.0f}'.format(self._loan._currency, self._hoa))
-        print(' - Management Fees:       {}{:>11,.0f}'.format(self._loan._currency, self._management_fee))
-        print(' - Tax:                   {}{:>11,.0f}'.format(self._loan._currency, self._tax))
-        print(' - Insurnace:             {}{:>11,.0f}'.format(self._loan._currency, self._insurance))
-        print('')
-        print('Tax Deductibles:          {}{:>11,.0f} p.a.'.format(self._loan._currency, tax_deductibles * 12))
         taxable_income = self._rent - tax_deductibles
-        print('Taxable Income:           {}{:>11,.0f} p.a.'.format(self._loan._currency, taxable_income * 12))
         income_after_tax = taxable_income * 12 * (1 - self._income_tax_rate)
-        print('Income After Tax:         {}{:>11,.0f} p.a.'.format(self._loan._currency, income_after_tax))
-        print('Cashflow:                 {}{:>11,.0f} p.a.'.format(self._loan._currency, income_after_tax - not_tax_deductibles * 12))
-        print('')
-        print('Net ROI:                    {:>10,.0%} p.a.'.format((taxable_income * 12) * (1 - self._income_tax_rate) / original_investment))
-        print('Loan Leverage:              {:>10,.1f}'.format(1+ float(self._loan.principal) / original_investment))
+
+        if output_type is None:
+            print(summarize('txt'))
+        
+        output = ""
+        if output_type.lower() == 'txt':
+            new_line = '\n'
+            tab = '\t'
+        elif output_type.lower() == 'html':
+            new_line = '<br>'
+            tab = '    '
+            output += "<pre>"
+        else:
+            raise exception("Invalid output type. please use either txt, html on None")
+                
+        output += 'Key Info'
+        output += '{}{}Property Purchase Price:  {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._price)
+        output += '{}{}Additional Setup Cost:    {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._additional_investment)
+        output += '{}'.format(new_line)
+        output += '{} Loan'.format(new_line)
+        output += '{}{}Initial Investment:       {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, original_investment)
+        output += '{}{}Loan Principal:           {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._loan.principal)
+        output += '{}'.format(new_line)
+        output += '{} Rent & Costs'.format(new_line)
+        output += '{}{}Monthly Rent:             {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._rent)        
+        output += '{}{}Monthly Costs:            {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, tax_deductibles + not_tax_deductibles)
+        output += '{}{} - Loan Payment:          {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._loan.monthly_payment)
+        output += '{}{}   * Principal:           {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._loan.schedule(1).principal)
+        output += '{}{}   * Interest:            {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._loan.schedule(1).interest)
+        output += '{}{} - HOA:                   {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._hoa)
+        output += '{}{} - Management Fees:       {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._management_fee)
+        output += '{}{} - Tax:                   {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._tax)
+        output += '{}{} - Insurnace:             {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._insurance)
+        output += '{}'.format(new_line)
+        output += '{} Income & Tax'.format(new_line)
+        output += '{}{}Tax Deductibles:          {}{:>11,.0f} p.a.'.format(new_line, tab, self._loan._currency, tax_deductibles * 12)          
+        output += '{}{}Taxable Income:           {}{:>11,.0f} p.a.'.format(new_line, tab, self._loan._currency, taxable_income * 12)
+        output += '{}{}Income After Tax:         {}{:>11,.0f} p.a.'.format(new_line, tab, self._loan._currency, income_after_tax)
+        output += '{}{}Cashflow:                 {}{:>11,.0f} p.a.'.format(new_line, tab, self._loan._currency, income_after_tax - not_tax_deductibles * 12)
+        output += '{}'.format(new_line)
+        output += '{} ROI'.format(new_line)
+        output += '{}{}Net ROI:                    {:>10,.0%} p.a.'.format(new_line, tab, (taxable_income * 12) * (1 - self._income_tax_rate) / original_investment)
+        output += '{}{}Loan Leverage:              {:>10,.1f}'.format(new_line, tab, 1+ float(self._loan.principal) / original_investment)
+        return output
