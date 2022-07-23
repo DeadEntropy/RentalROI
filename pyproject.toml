@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "RentalROI"
-version = "0.1"
+version = "0.1.1"
 authors = [
   { name="DeadEntropy", email="" },
 ]
@@ -17,3 +17,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/DeadEntropy/RentalROI"
