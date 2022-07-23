@@ -7,7 +7,7 @@ This package can be used to analyse rental properties ROI
 Installation
 --------------------
 
-To install mortgage, simply:
+To install RentalROI, simply:
 
 ```commandline
 pip install rentalroi
