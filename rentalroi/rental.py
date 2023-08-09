@@ -1,19 +1,23 @@
 from collections import namedtuple
 from mortgage import Loan
 
-Cashflow = namedtuple('Cashflow', 'number rent hoa management_fee tax insurance interest principal')
+Cashflow = namedtuple('Cashflow', 'number rent hoa management_fee tax home_insurance flood_insurance interest principal')
 
 class Rental:    
-    def __init__(self, price, rent, hoa, management_fee = 0.0, tax_rate = 0.0035, insurance_rate = 0.0035, loan_ratio = 0.85, \
-                 loan_term = 15, loan_rate = 0.06, income_tax_rate = 0.37, additional_investment = 0.0):
+    def __init__(self, price, monthly_rent, monthly_hoa, monthly_utilities = 0.0, management_fee = 0.0, tax_rate = 0.0035, home_ins_rate = 0.007, flood_ins_rate = 0.003, loan_ratio = 0.85, \
+                 loan_term = 15, loan_rate = 0.06, income_tax_rate = 0.37, additional_investment = 0.0, include_add_inv_in_loan: bool = False):
         self._price = price
         self._additional_investment = additional_investment
-        self._rent = rent
-        self._hoa = hoa
-        self._management_fee = rent*management_fee
+        self._include_add_inv_in_loan = include_add_inv_in_loan
+        self._rent = monthly_rent
+        self._hoa = monthly_hoa
+        self._utilities = monthly_utilities
+        self._management_fee = monthly_rent*management_fee
         self._tax = price*tax_rate/12
-        self._insurance = price*insurance_rate/12
-        self._loan = Loan(principal=(price + additional_investment)*loan_ratio, interest=loan_rate, term=loan_term)
+        self._home_insurance = price*home_ins_rate/12
+        self._flood_insurance = price*flood_ins_rate/12
+        loan_amount = (price + additional_investment) if include_add_inv_in_loan else price
+        self._loan = Loan(principal=loan_amount*loan_ratio, interest=loan_rate, term=loan_term)
         self._schedule = self._initialize_schedule()
         self._income_tax_rate = income_tax_rate
         
@@ -30,7 +34,8 @@ class Rental:
                               hoa=0,
                               management_fee=0,
                               tax=0,
-                              insurance=0,
+                              home_insurance=0,
+                              flood_insurance=0,
                               interest=0,
                               principal=0)
         
@@ -42,7 +47,8 @@ class Rental:
                                 hoa=self._hoa,
                                 management_fee=self._management_fee,
                                 tax=self._tax,
-                                insurance=self._insurance,
+                                home_insurance=self._home_insurance,
+                                flood_insurance=self._flood_insurance,
                                 interest=float(loan_sch.interest),
                                 principal=float(loan_sch.principal))
 
@@ -52,7 +58,7 @@ class Rental:
     def summarize(self, output_type=None):
 
         original_investment =  self._price + self._additional_investment - float(self._loan.principal)
-        tax_deductibles = float(self._loan.schedule(1).interest) + self._insurance + self._management_fee + self._hoa + self._tax
+        tax_deductibles = float(self._loan.schedule(1).interest) + self._home_insurance + self._flood_insurance + self._management_fee + self._hoa + self._tax + self._utilities
         not_tax_deductibles = float(self._loan.schedule(1).principal)
         taxable_income = self._rent - tax_deductibles
         income_after_tax = taxable_income * 12 * (1 - self._income_tax_rate)
@@ -86,11 +92,15 @@ class Rental:
         output += '{}{}   * Principal:           {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._loan.schedule(1).principal)
         output += '{}{}   * Interest:            {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._loan.schedule(1).interest)
         output += '{}{} - HOA:                   {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._hoa)
+        output += '{}{} - Utilities:             {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._utilities)
         output += '{}{} - Management Fees:       {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._management_fee)
         output += '{}{} - Tax:                   {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._tax)
-        output += '{}{} - Insurnace:             {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._insurance)
+        output += '{}{} - Insurance:             {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._home_insurance + self._flood_insurance)
+        output += '{}{}   * Home Insurance:      {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._home_insurance)
+        output += '{}{}   * Flood Insurance:     {}{:>11,.0f}'.format(new_line, tab, self._loan._currency, self._flood_insurance)
         output += '{}'.format(new_line)
         output += '{} Income & Tax'.format(new_line)
+        output += '{}{}Total Rent:               {}{:>11,.0f} p.a.'.format(new_line, tab, self._loan._currency, self._rent * 12)  
         output += '{}{}Tax Deductibles:          {}{:>11,.0f} p.a.'.format(new_line, tab, self._loan._currency, tax_deductibles * 12)          
         output += '{}{}Taxable Income:           {}{:>11,.0f} p.a.'.format(new_line, tab, self._loan._currency, taxable_income * 12)
         output += '{}{}Income After Tax:         {}{:>11,.0f} p.a.'.format(new_line, tab, self._loan._currency, income_after_tax)
